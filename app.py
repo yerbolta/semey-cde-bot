@@ -93,7 +93,8 @@ REV: P01, P02... — в разработке (WIP)
 не совпадает с длинным кодом файла. Хранится отдельной колонкой
 в реестре, соответствие видно там же.
 
-ДВА РЕЕСТРА (Реестры_SEMEY.xlsx)
+ДВА РЕЕСТРА — ведутся в Google Sheets (с 2026-07-15, не в Excel):
+https://docs.google.com/spreadsheets/d/1Rt7h5h_DvBQY_QGZnlYIoS6VubMfoecY1hdATD6JBP0/edit
 - Document Register — одна строка на лист документа: код листа, имя
   DWG-файла, № листа в штампе, раздел, здание, роль Metcon, источник
   исходных данных, ревизия, статус, даты, кому передано.
@@ -105,8 +106,8 @@ REV: P01, P02... — в разработке (WIP)
   (сам/переоформляет/на основе входных данных) и укажи точный путь.
 - Если вопрос про имя файла — разложи по системе кодирования,
   укажи правильную ревизию (P vs C).
-- Если вопрос про реестр — укажи, в какой из двух листов Excel
-  и какую строку/колонку заполнить.
+- Если вопрос про реестр или "где реестр" — дай ссылку на Google Sheets
+  выше и укажи, в какой из двух листов и какую строку/колонку заполнить.
 - Если ситуация не описана в базе — прямо скажи, что это не
   предусмотрено текущими правилами, и предложи уточнить у Ербола
   (ГАП), а не придумывай новое правило от себя.
@@ -120,6 +121,14 @@ REV: P01, P02... — в разработке (WIP)
 # долгосрочная — этого достаточно для справочных вопросов.
 chat_histories: dict[int, list[dict]] = {}
 MAX_HISTORY_MESSAGES = 10
+
+REGISTRY_URL = "https://docs.google.com/spreadsheets/d/1Rt7h5h_DvBQY_QGZnlYIoS6VubMfoecY1hdATD6JBP0/edit"
+REGISTRY_KEYWORDS = ("реестр", "registry", "таблиц", "sheet", "гугл шит", "google sheet")
+
+
+def is_registry_question(text: str) -> bool:
+    lowered = text.lower()
+    return any(keyword in lowered for keyword in REGISTRY_KEYWORDS)
 
 
 def send_telegram_message(chat_id: int, text: str) -> None:
@@ -164,6 +173,14 @@ def webhook():
     if text == "/reset":
         chat_histories.pop(chat_id, None)
         send_telegram_message(chat_id, "Контекст диалога очищен.")
+        return jsonify(ok=True)
+
+    if is_registry_question(text):
+        send_telegram_message(
+            chat_id,
+            "Реестры (Document Register, Transmittal Log, Здания, Чек-лист разделов) — здесь:\n"
+            f"{REGISTRY_URL}",
+        )
         return jsonify(ok=True)
 
     try:
